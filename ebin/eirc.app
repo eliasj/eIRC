@@ -1,8 +1,8 @@
-{application, tcp_server,
+{application, eirc,
  [
   {description, "eIRC"},
-  {vsn, "0.1"},
-  {id, "tcp_server"},
+  {vsn, "0.0.1"},
+  {id, "eirc"},
   {modules,      [tcp_listener, chat_group, client_server, client,
   				group_server]},
   {registered,   [tcp_server_sup, tcp_listener]},
