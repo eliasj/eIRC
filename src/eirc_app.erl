@@ -19,7 +19,7 @@
 %% To be called by the TCP listenser process
 
 start_client() ->
-    supervisor:start_child(client_sup, [?HOST]).
+	supervisor:start_child(client_sup, [?HOST]).
 
 start_group(Chan, CPid) ->
 	supervisor:start_child(group_sup, [Chan, CPid]).
@@ -32,7 +32,7 @@ start(_Type, _Args) ->
 	supervisor:start_link({local, ?MODULE}, ?MODULE, [ListenPort, client]).
 
 stop(_State) ->
-    ok.
+	ok.
 
 %%---------------------------------------------------------------------------
 %% Supervisor behaviour callbacks
@@ -87,31 +87,31 @@ init([Port, Module]) ->
 	};
 
 init([Module]) ->
-    {ok,
-        {_SupFlags = {simple_one_for_one, ?MAX_RESTART, ?MAX_TIME},
-            [
-              % TCP Client
-              {   undefined,                               % Id       = internal id
-                  {Module,start_link,[]},                  % StartFun = {M, F, A}
-                  temporary,                               % Restart  = permanent | transient | temporary
-                  2000,                                    % Shutdown = brutal_kill | int() >= 0 | infinity
-                  worker,                                  % Type     = worker | supervisor
-                  []                                       % Modules  = [Module] | dynamic
-              }
-            ]
-        }
-    }.
+	{ok,
+		{_SupFlags = {simple_one_for_one, ?MAX_RESTART, ?MAX_TIME},
+			[
+			  % TCP Client
+				{	undefined,							% Id	   = internal id
+					{Module,start_link,[]},				% StartFun = {M, F, A}
+					temporary,							% Restart  = permanent | transient | temporary
+					2000,								% Shutdown = brutal_kill | int() >= 0 | infinity
+					worker,								% Type	   = worker | supervisor
+					[]									% Modules  = [Module] | dynamic
+				}
+			]
+		}
+	}.
 
 %%----------------------------------------------------------------------
 %% Internal functions
 %%----------------------------------------------------------------------
 get_app_env(Opt, Default) ->
-    case application:get_env(application:get_application(), Opt) of
-    {ok, Val} -> Val;
-    _ ->
-        case init:get_argument(Opt) of
-        [[Val | _]] -> Val;
-        error       -> Default
-        end
-    end.
+	case application:get_env(application:get_application(), Opt) of
+	{ok, Val} -> Val;
+	_ ->
+		case init:get_argument(Opt) of
+		[[Val | _]] -> Val;
+		error	   -> Default
+		end
+	end.
 
