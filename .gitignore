@@ -1,0 +1,27 @@
+# Latex:
+*.aux
+*.log
+*.bbl
+*.blg
+*.pdf
+*.dvi
+*.toc
+*.bak
+*.out
+
+# Vim tempfiles:
+*.swp
+
+# Backup files left behind by the Emacs editor.
+*~
+
+# erlang
+*.beam
+
+# Eclipse
+.settings
+.project
+
+# hg
+.hg
+.hgignore
