@@ -52,20 +52,20 @@ handle_call(stop, _From, Tab) ->
 	{stop, normal, stopped, Tab};
 
 handle_call({registation, Nick}, From, Users) ->
-	{IPid,_} = From,
-	Reply = case ets:insert_new(Users,{Nick, IPid}) of
+	{Pid,_} = From,
+	Reply = case ets:insert_new(Users,{Nick, Pid}) of
 				true  -> ok;
 				false -> {error, ["433", " * ", Nick, " :Nickname is already in use"]}
 			end,
 	{reply, Reply, Users};
 
 
-handle_call({nick, Who, NewNick}, _, Users) ->
+handle_call({nick, Who, Nick}, _, Users) ->
 	Pid = ets:lookup_element(Users, Who, 2),
-	Reply = case ets:insert_new(Users, {NewNick, Pid}) of
+	Reply = case ets:insert_new(Users, {Nick, Pid}) of
 				true -> ets:delete(Users, Who),
 						ok;
-				false -> {error, ["433 * ", NewNick, " :Nickname is already in use"]}
+				false -> {error, ["433", " * ", Nick, " :Nickname is already in use"]}
 			end,
 	{reply, Reply, Users};
 

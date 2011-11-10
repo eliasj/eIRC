@@ -12,7 +12,7 @@
 %% API to the server
 %-export([nickS/1, host_name/1, msg_to/2, reply/2]).
 
--export([start_link/1, set_socket/2, msg_to/2, nick/1, host_name/1, reply/2]).
+-export([start_link/1, set_socket/2, msg_to/2, nick/1, host_name/1, reply/2, who/1]).
 
 %% gen_fsm callbacks
 -export([init/1, handle_event/3,
@@ -70,6 +70,10 @@ host_name(Pid) when is_pid(Pid) ->
 
 error(Msg) ->
 	gen_fsm:send_event(self(), {rpl_msg, Msg}).
+
+who(Pid) when is_pid(Pid) ->
+	gen_fsm:sync_send_all_state_event(Pid, who).
+
 
 whois(Pid, FPid, FNick) when is_pid(Pid) and is_pid(FPid) ->
 	gen_fsm:send_event(Pid, {whois, FPid, FNick}).
@@ -162,6 +166,24 @@ chat({mode, Chan}, #state{chan=C} = State) ->
 	end,
 	{next_state, chat, State};
 
+chat({mode, Chan, Mode}, #state{chan=C} = State) ->
+		case lists:member(Chan, C) of
+			true ->
+					chat_group:mode(Chan, self(), Mode);
+			false ->
+			error(["442 ", Chan, " :You're not on that channel"])
+	end,
+	{next_state, chat, State};
+
+chat({mode, Chan, Mode, Param}, #state{chan=C} = State) ->
+		case lists:member(Chan, C) of
+			true ->
+					chat_group:mode(Chan, self(), Mode, Param);
+			false ->
+			error(["442 ", Chan, " :You're not on that channel"])
+	end,
+	{next_state, chat, State};
+
 chat({msg, Msg}, #state{socket=S} = State) ->
 	gen_tcp:send(S, [ Msg, "\r\n"]),
 	{next_state, chat, State};
@@ -221,7 +243,7 @@ chat({quit, Reson}, #state{chan=C, nick=N, host=H} = State) ->
 	lists:foreach(fun(Chan) ->
 							chat_group:quit(Chan, self(), N, H, Reson) end,
 					C),
-	{next_state, close, State};
+	{stop, normal, State};
 
 chat({rpl_msg, Msg}, #state{socket=S, host=H} = State) ->
 	gen_tcp:send(S, [ ":", H, " ", Msg, "\r\n"]),
@@ -247,6 +269,10 @@ chat({topic, Chan, Topic}, #state{chan=C} = State) ->
 		false ->
 			error(["442 ", Chan, " :You're not on that channel"])
 	end,
+	{next_state, chat, State};
+
+chat({who, Who}, #state{chan=_C} = State)->
+	chat_group:who(Who, self()),
 	{next_state, chat, State};
 
 chat({whois, Who}, #state{nick=N} = State) ->
@@ -300,8 +326,14 @@ handle_event(Event, StateName, StateData) ->
 % TODO Add functions to recive data from the client
 handle_sync_event(nick, _From, StateName, #state{nick=N} = State) ->
 	{reply, N, StateName, State};
+
 handle_sync_event(host, _From, StateName, #state{host=H} = State) ->
 	{reply, H, StateName, State};
+
+handle_sync_event(who, _From, StateName, #state{host=H, nick=N, rname=R, uname=U} = State) ->
+	Reply = [U, " ", H, " locahost ", N ," H :0 ", R],
+	{reply, Reply, StateName, State};
+% <channel> <user> <host> <server> <nick> <H|G>[*][@|+] :<hopcount> <real name>"
 handle_sync_event(Event, _From, StateName, StateData) ->
 	{stop, {StateName, undefined_event, Event}, StateData}.
 
@@ -333,7 +365,8 @@ handle_info(_Info, StateName, StateData) ->
 %% Returns: any
 %% @private
 %%-------------------------------------------------------------------------
-terminate(_Reason, _StateName, #state{socket=Socket}) ->
+terminate(_Reason, _StateName, #state{nick=Nick, socket=Socket}) ->
+	(catch client_server:leave(Nick)),
 	(catch gen_tcp:close(Socket)),
 	ok.
 
@@ -404,8 +437,10 @@ parser([D|Ds]) ->
 			end;
 		"MODE" ->
 			case Ds of
-				[Who, Mode|_] ->
-					{mode, Who, Mode};
+				[Chan, Mode] ->
+					{mode, Chan, Mode};
+				[Chan, Mode|Users] ->
+					{mode, Chan, Mode, Users};
 				[Chan]->
 					{mode, Chan}
 			end;
@@ -449,7 +484,7 @@ parser([D|Ds]) ->
 				_ ->
 					{rpl_msg, "461 USER :Not enough parameters"}
 			end;
-		"WHOIS" -> %FIX Dont work, message: "WHOIS elias|4 elias|4\r\n"
+		"WHOIS" -> 
 			case Ds of
 				[Who] ->
 					{whois, Who};
@@ -457,6 +492,13 @@ parser([D|Ds]) ->
 					{whois, Who};
 				_ ->
 					{rpl_msg, "431 : No nickname given"}
+			end;
+		"WHO" ->
+			case Ds of
+				[] -> 
+					{rpl_msg, "402 <server name> :No such server"};
+				[Who] ->
+					{who, Who}
 			end;
 		_ ->
 			{rpl_msg, space(D,Ds)}

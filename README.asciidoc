@@ -51,7 +51,7 @@ Here is a table with the IRC protocol and what is implemented.
 | USERS| 
 | VERSION| 
 | WALLOPS| 
-| WHO| 
+| WHO| Some parts
 | WHOIS| Yes
 | WHOWAS| 
 |==================
