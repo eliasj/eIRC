@@ -8,50 +8,50 @@ Here is a table with the IRC protocol and what is implemented.
 
 [width="50%"]
 |===================
-| ADMIN| 
-| AWAY| 
-| CONNECT| 
-| DIE| 
-| ERROR| 
-| INFO| 
-| INVITE| 
-| ISON| 
-| JOIN| Yes
-| KICK| 
-| KILL| 
-| LINKS| 
-| LIST| 
-| LUSERS| 
-| MODE| 
-| MOTD| 
-| NAMES| Yes
-| NICK| Yes
-| NOTICE| 
-| OPER| 
-| PART| Yes
-| PASS| 
-| PING| Yes
-| PONG| Yes
-| PRIVMSG| Yes
-| QUIT| Yes
-| REHASH| 
-| RESTART| 
-| SERVICE| 
-| SERVLIST| 
-| SERVER| 
-| SQUERY| 
-| SQUIT| 
-| STATS| 
-| SUMMON| 
-| TIME| 
-| TOPIC| Yes
-| TRACE| 
-| USER| Yes
-| USERHOST| 
-| USERS| 
-| VERSION| 
-| WALLOPS| 
-| WHO| Some parts
-| WHOIS| Yes
-| WHOWAS| 
+| ADMIN| | 
+| AWAY| |
+| CONNECT| |
+| DIE| |
+| ERROR| |
+| INFO| |
+| INVITE| |
+| ISON| |
+| JOIN| Yes|
+| KICK| |
+| KILL| |
+| LINKS| |
+| LIST| |
+| LUSERS| |
+| MODE| Yes| Only for channels and only o,v,m,t
+| MOTD| |
+| NAMES| Yes|
+| NICK| Yes|
+| NOTICE| |
+| OPER| |
+| PART| Yes|
+| PASS| |
+| PING| Yes|
+| PONG| Yes|
+| PRIVMSG| Yes|
+| QUIT| Yes|
+| REHASH| |
+| RESTART| |
+| SERVICE| |
+| SERVLIST| |
+| SERVER| |
+| SQUERY| |
+| SQUIT| |
+| STATS| |
+| SUMMON| |
+| TIME| |
+| TOPIC| Yes|
+| TRACE| |
+| USER| Yes|
+| USERHOST| |
+| USERS| |
+| VERSION| | 
+| WALLOPS| |
+| WHO| Yes| Only for channels
+| WHOIS| Yes|
+| WHOWAS| |
 |==================
