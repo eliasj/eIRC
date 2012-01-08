@@ -148,7 +148,7 @@ handle_cast({join, Pid}, #state{users=Users, mode=M, name=Name, topic=Topic} = S
 			names(Name, Pid),
 			{noreply, State#state{mode=NewMode}};
 		false ->
-			none
+			client:reply(Pid, ["471 ", Name, " :Cannot join channel (+l)"])
 	end;
 
 handle_cast({kick, _Pid, _Nick}, State) ->
@@ -172,49 +172,47 @@ handle_cast({mode, Pid}, #state{name=Name} = State)->
 
 handle_cast({mode, Pid, Mode}, #state{name=Name,mode=M,users=Users} = State) ->
 	#mode{o=O} = M,
-	case lists:member(client:nick(Pid), O) of
+	case lists:member(client:nick(Pid), O) and Mode != "b" of
 		true ->
-			io:format("~s ~n", [Mode]), % TODO Remove, for debugging
 			case Mode of
 				[$+|ModeT] ->
 					Status = true;
 				[$-|ModeT] ->
 					Status = false;
-				"b" ->
-					ModeT = banMask,
-					Status = crap;
-				C ->
-					io:foramt("error! get: ~s ~n",[C]),	
+				Other1 ->
+					error_logger:error_msg("Chat gruop: '~w'. Unexpected message: ~p\n", [Name,Other1]),
 					ModeT = banMask,
 					Status = crap
 			end,
 			case ModeT of 
 				[$p] -> 
 					send(Users, Pid, [ "MODE ", Name, " ", Mode]),
-					NewM = M#mode{p=Status};
+					{noreply, State#state{mode = M#mode{p=Status}}};
 				[$i] ->
 					send(Users, Pid, [ "MODE ", Name, " ", Mode]),
-					NewM = M#mode{i=Status};
+					{noreply, State#state{mode = M#mode{i=Status}}};
 				[$t] ->
 					send(Users, Pid, [ "MODE ", Name, " ", Mode]),
-					NewM = M#mode{t=Status};
+					{noreply, State#state{mode = M#mode{t=Status}}};
 				[$n] ->
 					send(Users, Pid, [ "MODE ", Name, " ", Mode]),
-					NewM = M#mode{n=Status};
+					{noreply, State#state{mode = M#mode{n=Status}}};
 				[$m] ->
 					send(Users, Pid, [ "MODE ", Name, " ", Mode]),
-					NewM = M#mode{m=Status};
-				banMask ->
+					{noreply, State#state{mode= M#mode{m=Status}}};
+				Other2 ->
+					error_logger:error_msg("Chat gruop: '~w'. Unexpected message: ~p\n", [Name,Other2]),
+					{noreply, State} 
+			end;
+		false ->
+			case Mode of 
+				"b" ->
 					#mode{b=B} = M,
 					lists:foreach(fun(X) -> client:reply(Pid, ["367 ", Name, " ", X]) end, B),
-					client:reply(Pid, ["368 ", client:nick(Pid), " ", Name, " :End of channel ban list"]), 
-					NewM = M;
-				_ ->
-					NewM = M % TODO Error handle
+					client:reply(Pid, ["368 ", client:nick(Pid), " ", Name, " :End of channel ban list"]);
+				_ ->	
+					client:reply(Pid, ["482 ", Name, " :You're not channel operator"])
 			end,
-			{noreply, State#state{mode=NewM}};
-		false ->
-			client:reply(Pid, ["482 ", Name, " :You're not channel operator"]),
 			{noreply, State}
 	end;
 
@@ -222,14 +220,13 @@ handle_cast({mode, Pid, Mode, Param}, #state{name=Name,mode=M,users=Users} = Sta
 	#mode{o=O} = M,
 	case lists:member(client:nick(Pid), O) of
 		true ->
-			io:format("~s ~n", [Mode]), % TODO Remove, for debugging
 			case Mode of
 				[$+|ModeT] ->
 					Status = true;
 				[$-|ModeT] ->
 					Status = false;
-				C ->
-					io:foramt("error! get: ~s ~n",[C]),	
+				Other1 ->
+					error_logger:error_msg("Chat gruop: '~w'. Unexpected message: ~p\n", [Name,Other1]),
 					ModeT = banMask,
 					Status = crap
 			end,
@@ -239,30 +236,35 @@ handle_cast({mode, Pid, Mode, Param}, #state{name=Name,mode=M,users=Users} = Sta
 					#mode{o=O} = M,
 					case Status of
 						true ->
-							NewM = M#mode{o=Param++O};
+							{noreply, State#state{mode=M#mode{o=Param++O}}};
 						false ->
-							NewM = M#mode{o=lists:foldl(fun(U, AccIn) -> lists:delete(U, AccIn) end, O, Param)}
+							{noreply, State#state{mode=M#mode{o=lists:foldl(fun(U, AccIn) -> lists:delete(U, AccIn) end, O, Param)}}}
 					end;
 				[$l] ->
 					send(Users, Pid, [ "MODE ", Name, " ",  Mode, " ", Param]),
-					NewM = M; % TODO Add/change the limit of users in the channel
+					case Status and is_number(Param) of
+						true ->
+							{noreply, State#state{mode=M#mode{l=Param}}};
+						false ->
+							{noreply, State#state{mode=M#mode{l=undefind}}}
+					end;
+
 				[$b] ->
 					send(Users, Pid, [ "MODE ", Name, " ",  Mode, " ", Param]),
-					NewM = M; % TODO Handle the ban mask
+					{noreply, State}; % TODO Handle the ban mask
 				[$v] -> 
 					send(Users, Pid, [ "MODE ", Name, " ",  Mode, " ", Param]),
 					#mode{v=V} = M,
 					case Status of
 						true ->
-							NewM = M#mode{v=Param++V};
+							{noreply, State#state{mode=M#mode{v=Param++V}}};
 						false -> 
-							NewM = M#mode{v=lists:foldl(fun(U, AccIn) -> lists:delete(U, AccIn) end, V, Param)}
+							{noreply, State#state{mode=M#mode{v=lists:foldl(fun(U, AccIn) -> lists:delete(U, AccIn) end, V, Param)}}}
 					end;
 				[$k] ->
 					send(Users, Pid, [ "MODE ", Name, " ",  Mode, " ", Param]),
-					NewM = M % TODO Add/change the password to the channel
-			end,
-			{noreply, State#state{mode=NewM}};
+					{noreply, State} % TODO Add/change the password to the channel
+			end;
 		false ->
 			client:reply(Pid, ["482 ", Name, " :You're not channel operator"]),
 			{noreply, State}
