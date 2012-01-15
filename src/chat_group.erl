@@ -172,7 +172,7 @@ handle_cast({mode, Pid}, #state{name=Name} = State)->
 
 handle_cast({mode, Pid, Mode}, #state{name=Name,mode=M,users=Users} = State) ->
 	#mode{o=O} = M,
-	case lists:member(client:nick(Pid), O) and Mode != "b" of
+	case lists:member(client:nick(Pid), O) and Mode /= "b" of
 		true ->
 			case Mode of
 				[$+|ModeT] ->
