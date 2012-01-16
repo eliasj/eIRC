@@ -323,7 +323,7 @@ handle_event(Event, StateName, StateData) ->
 %%			{stop, Reason, Reply, NewStateData}
 %% @private
 %%-------------------------------------------------------------------------
-% TODO Add functions to recive data from the client
+% Functions to recive data from the client
 handle_sync_event(nick, _From, StateName, #state{nick=N} = State) ->
 	{reply, N, StateName, State};
 
@@ -409,11 +409,8 @@ register(State) ->
 
 
 parse(Cmds) ->
-	%io:format("Comands ~n ~w~n", Cmds),
 	Cmds1 = string:tokens(Cmds, "\r\n"),
-	%io:format("Comands ~n ~w~n", Cmds1),
 	Cmds2 = lists:map(fun(I) -> string:tokens(I, " ") end, Cmds1),
-	%io:format("Comands ~n ~w~n", Cmds2),
 	lists:map(fun(I) ->	parser(I) end, Cmds2).
 
 parser(["JOIN"]) ->
