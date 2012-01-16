@@ -400,7 +400,7 @@ register(State) ->
 			{next_state, chat, State};
 		{error, Msg} ->
 			gen_tcp:send(State#state.socket, [":", State#state.host, " ", Msg, "\r\n"]),
-			case lists:nth(1,Msg) of 
+			case hd(Msg) of 
 				"433" ->
 					{next_state, connect, State};
 				Error -> io:format("Receive nick ~p~n", [Error])
