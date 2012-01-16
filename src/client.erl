@@ -416,94 +416,76 @@ parse(Cmds) ->
 	%io:format("Comands ~n ~w~n", Cmds2),
 	lists:map(fun(I) ->	parser(I) end, Cmds2).
 
+parser(["JOIN"]) ->
+	{rpl_msg, "461 JOIN :Not enough parameters"};
+parser(["JOIN"|Ds]) ->
+	[Chan] = Ds,
+	{join, Chan};
+
+parser(["NAMES"|Ds]) ->
+	[Chan] = Ds,
+	{names, Chan};
+
+parser(["NICK"]) ->
+	{rpl_msg, "461 NICK :Not enough parameters"};
+parser(["NICK"|Ds]) -> 
+	[Who] = Ds,
+	{nick, Who};
+
+parser(["MODE", Chan, Mode]) ->
+	{mode, Chan, Mode};
+parser(["MODE", Chan, Mode|Users]) ->
+	{mode, Chan, Mode, Users};
+parser(["MODE", Chan])->
+	{mode, Chan};
+
+parser(["PART"]) ->
+	{rpl_msg, "461 PART :Not enough parameters"};
+parser(["PART", Chan]) ->
+	{part, Chan};
+
+parser(["PING", Host]) ->
+	{ping, Host};
+
+parser(["PRIVMSG"]) ->
+	{rpl_msg, "461 PRIVMSG :Not enough parameters"};
+parser(["PRIVMSG",To|Msg]) -> 
+	Mesg = space("PRIVMSG", [To|Msg]),
+	{privmsg, To, Mesg};
+
+parser(["QUIT"|Ds]) ->
+	Mesg = string:substr(space(" ", Ds),3),
+	{quit, Mesg};
+
+parser(["TOPIC"]) ->
+	{rpl_msg, "461 TOPIC :Not enough parameters"};
+parser(["TOPIC", Chan]) ->
+	{topic, Chan};
+parser(["TOPIC", Chan |Topic]) ->
+	T = string:substr(space(" ", Topic),3),
+	{topic, Chan, T};
+
+parser(["USER", Who, Host, _Server |Name]) -> 
+	% <username> <hostname> <servername> <realname>
+	RName = string:substr(space(" ", Name),4),
+	{user, Who, RName, Host};
+parser(["USER"|_]) ->
+	{rpl_msg, "461 USER :Not enough parameters"};
+
+parser(["WHOIS"]) ->
+	{rpl_msg, "431 : No nickname given"};
+parser(["WHOIS", Who]) -> 
+	{whois, Who};
+parser(["WHOIS", Who, Who]) -> 
+	{whois, Who};
+
+parser(["WHO"])->
+	{rpl_msg, "402 <server name> :No such server"};
+parser(["WHO", Who]) ->
+	{who, Who};
+
 parser([D|Ds]) ->
-	case D of 
-		"JOIN" ->
-			case Ds of
-				[Chan] ->
-					{join, Chan};
-				_ ->
-					{rpl_msg, "461 JOIN :Not enough parameters"}
-			end;
-		"NAMES" ->
-			[Chan] = Ds,
-			{names, Chan};
-		"NICK" -> 
-			case Ds of
-				[Who] ->
-					{nick, Who};
-				_ -> 
-					{rpl_msg, "461 NICK :Not enough parameters"}
-			end;
-		"MODE" ->
-			case Ds of
-				[Chan, Mode] ->
-					{mode, Chan, Mode};
-				[Chan, Mode|Users] ->
-					{mode, Chan, Mode, Users};
-				[Chan]->
-					{mode, Chan}
-			end;
-		"PART" ->
-			case Ds of
-				[Chan] ->
-					{part, Chan};
-				_ ->
-					{rpl_msg, "461 PART :Not enough parameters"}
-			end;
-		"PING" ->
-			[Host] = Ds,
-			{ping, Host};
-		"PRIVMSG" -> 
-			Mesg = space("PRIVMSG", Ds),
-			case Ds of
-				[To|_] ->
-					{privmsg, To, Mesg};
-				[] -> 
-					{rpl_msg, "461 PRIVMSG :Not enough parameters"}
-			end;
-		"QUIT" ->
-			Mesg = string:substr(space(" ", Ds),3),
-			{quit, Mesg};
-		"TOPIC" ->
-			case Ds of
-				[Chan] -> 
-					{topic, Chan};
-				[Chan |Topic] -> 
-					T = string:substr(space(" ", Topic),3),
-					{topic, Chan, T};
-				_ ->
-					{rpl_msg, "461 TOPIC :Not enough parameters"}
-			end;
-		"USER" ->
-			case Ds of
-				[Who, Host, _Server |Name] -> 
-					% <username> <hostname> <servername> <realname>
-					RName = string:substr(space(" ", Name),4),
-					{user, Who, RName, Host};
-				_ ->
-					{rpl_msg, "461 USER :Not enough parameters"}
-			end;
-		"WHOIS" -> 
-			case Ds of
-				[Who] ->
-					{whois, Who};
-				[Who, Who] ->
-					{whois, Who};
-				_ ->
-					{rpl_msg, "431 : No nickname given"}
-			end;
-		"WHO" ->
-			case Ds of
-				[] -> 
-					{rpl_msg, "402 <server name> :No such server"};
-				[Who] ->
-					{who, Who}
-			end;
-		_ ->
-			{rpl_msg, space(D,Ds)}
-			
-	end. 
+	{rpl_msg, space(D,Ds)}.
 
 space(First, List) ->
 	lists:foldl(
