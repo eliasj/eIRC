@@ -166,8 +166,11 @@ handle_cast({message, Pid, Msg}, #state{mode=Mode, name=Name, users=Users} = Sta
 	{noreply, State};
 
 
-handle_cast({mode, Pid}, #state{name=Name} = State)->
-	client:reply(Pid, ["324 ", client:nick(Pid), " ", Name, " +nt"]), % should retun the chan mode
+handle_cast({mode, Pid}, #state{mode=Mode, name=Name} = State)->
+	#mode{i=I, l=L, m=M, n=N, p=P, s=S, t=T} = Mode, %TODO should return the current chan mode
+	Match = [{"i",I},{"l",L},{"m",M},{"n",N},{"p",P},{"s",S},{"t",T}],
+	Reply = [X || {X, true} <- Match],
+	client:reply(Pid, ["324 ", client:nick(Pid), " ", Name, " +", Reply]), % should retun the chan mode
 	{noreply, State};
 
 handle_cast({mode, Pid, Mode}, #state{name=Name,mode=M,users=Users} = State) ->
