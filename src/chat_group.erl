@@ -173,9 +173,15 @@ handle_cast({mode, Pid}, #state{mode=Mode, name=Name} = State)->
 	client:reply(Pid, ["324 ", client:nick(Pid), " ", Name, " +", Reply]), % should retun the chan mode
 	{noreply, State};
 
+handle_cast({mode, Pid, "b"}, #state{name=Name, mode=M} = State) ->
+	#mode{b=B} = M,
+	lists:foreach(fun(X) -> client:reply(Pid, ["367 ", Name, " ", X]) end, B),
+	client:reply(Pid, ["368 ", client:nick(Pid), " ", Name, " :End of channel ban list"]),
+	{noreply, State};
+
 handle_cast({mode, Pid, Mode}, #state{name=Name,mode=M,users=Users} = State) ->
 	#mode{o=O} = M,
-	case lists:member(client:nick(Pid), O) and Mode /= "b" of
+	case lists:member(client:nick(Pid), O) of
 		true ->
 			case Mode of
 				[$+|ModeT] ->
@@ -208,14 +214,7 @@ handle_cast({mode, Pid, Mode}, #state{name=Name,mode=M,users=Users} = State) ->
 					{noreply, State} 
 			end;
 		false ->
-			case Mode of 
-				"b" ->
-					#mode{b=B} = M,
-					lists:foreach(fun(X) -> client:reply(Pid, ["367 ", Name, " ", X]) end, B),
-					client:reply(Pid, ["368 ", client:nick(Pid), " ", Name, " :End of channel ban list"]);
-				_ ->	
-					client:reply(Pid, ["482 ", Name, " :You're not channel operator"])
-			end,
+			client:reply(Pid, ["482 ", Name, " :You're not channel operator"]),
 			{noreply, State}
 	end;
 
