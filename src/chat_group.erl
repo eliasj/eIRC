@@ -152,6 +152,7 @@ handle_cast({join, Pid}, #state{users=Users, mode=M, name=Name, topic=Topic} = S
 	end;
 
 handle_cast({kick, _Pid, _Nick}, State) ->
+	%% TODO 
 	{noreply, State};
 
 handle_cast({message, Pid, Msg}, #state{mode=Mode, name=Name, users=Users} = State) ->
@@ -167,10 +168,10 @@ handle_cast({message, Pid, Msg}, #state{mode=Mode, name=Name, users=Users} = Sta
 
 
 handle_cast({mode, Pid}, #state{mode=Mode, name=Name} = State)->
-	#mode{i=I, l=L, m=M, n=N, p=P, s=S, t=T} = Mode, %TODO should return the current chan mode
+	#mode{i=I, l=L, m=M, n=N, p=P, s=S, t=T} = Mode, 
 	Match = [{"i",I},{"l",L},{"m",M},{"n",N},{"p",P},{"s",S},{"t",T}],
 	Reply = [X || {X, true} <- Match],
-	client:reply(Pid, ["324 ", client:nick(Pid), " ", Name, " +", Reply]), % should retun the chan mode
+	client:reply(Pid, ["324 ", client:nick(Pid), " ", Name, " +", Reply]),
 	{noreply, State};
 
 handle_cast({mode, Pid, "b"}, #state{name=Name, mode=M} = State) ->
