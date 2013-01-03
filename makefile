@@ -11,3 +11,6 @@ run:
 
 shell:
 	erl -sname console -pa ebin
+
+check:
+	dialyzer -r ebin/ --src src/
