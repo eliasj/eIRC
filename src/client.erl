@@ -68,7 +68,7 @@ nick(Pid) when is_pid(Pid) ->
 host_name(Pid) when is_pid(Pid) ->
 	gen_fsm:sync_send_all_state_event(Pid, host).
 
-error(Msg) ->
+error_event(Msg) ->
 	gen_fsm:send_event(self(), {rpl_msg, Msg}).
 
 who(Pid) when is_pid(Pid) ->
@@ -162,7 +162,7 @@ chat({mode, Chan}, #state{chan=C} = State) ->
 			true ->
 					chat_group:mode(Chan, self());
 			false ->
-			error(["442 ", Chan, " :You're not on that channel"])
+			error_event(["442 ", Chan, " :You're not on that channel"])
 	end,
 	{next_state, chat, State};
 
@@ -171,7 +171,7 @@ chat({mode, Chan, Mode}, #state{chan=C} = State) ->
 			true ->
 					chat_group:mode(Chan, self(), Mode);
 			false ->
-			error(["442 ", Chan, " :You're not on that channel"])
+			error_event(["442 ", Chan, " :You're not on that channel"])
 	end,
 	{next_state, chat, State};
 
@@ -180,7 +180,7 @@ chat({mode, Chan, Mode, Param}, #state{chan=C} = State) ->
 			true ->
 					chat_group:mode(Chan, self(), Mode, Param);
 			false ->
-			error(["442 ", Chan, " :You're not on that channel"])
+			error_event(["442 ", Chan, " :You're not on that channel"])
 	end,
 	{next_state, chat, State};
 
@@ -217,7 +217,7 @@ chat({part, Chan}, #state{chan=C} = State) ->
 			chat_group:part(Chan, self()),
 			{next_state, chat, State#state{chan=NChans}};
 		false ->
-			error(["442 ", Chan, " :You're not on that channel"]),
+			error_event(["442 ", Chan, " :You're not on that channel"]),
 			{next_state, chat, State}
 	end;
 
@@ -258,7 +258,7 @@ chat({topic, Chan}, #state{chan=C} = State) ->
 		true ->
 			chat_group:topic(Chan, self());
 		false ->
-			error(["442 ", Chan, " :You're not on that channel"])
+			error_event(["442 ", Chan, " :You're not on that channel"])
 	end,
 	{next_state, chat, State};
 
@@ -267,7 +267,7 @@ chat({topic, Chan, Topic}, #state{chan=C} = State) ->
 		true ->
 			chat_group:topic(Chan, self(), Topic);
 		false ->
-			error(["442 ", Chan, " :You're not on that channel"])
+			error_event(["442 ", Chan, " :You're not on that channel"])
 	end,
 	{next_state, chat, State};
 
@@ -280,7 +280,7 @@ chat({whois, Who}, #state{nick=N} = State) ->
 		{ok, {Who, Wid}} ->
 			whois(Wid, self(), N);
 		_ ->
-			error(["401 ", N, " " , Who, " :No such nick/channel\r\n"])
+			error_event(["401 ", N, " " , Who, " :No such nick/channel\r\n"])
 		end,
 	{next_state, chat, State};
 
