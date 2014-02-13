@@ -2,5 +2,5 @@ language: erlang
 opt_release:
     - R16B03
 notifications:
-    recipients:
+    email:
         - eliasj@student.chalmers.se
