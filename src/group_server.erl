@@ -43,8 +43,7 @@ init([]) ->
 	{ok, ets:new(?MODULE, [])}.
 
 handle_call(stop, _From, Tab) ->
-	do(ets:tab2list(Tab), fun(P) -> chat_group:stop(P) end),
-	ets:delete(Tab),
+	close_all_groups(Tab),
 	{stop, normal, stopped, Tab};
 
 handle_call({join, Chan}, From, Chans) ->
@@ -88,12 +87,14 @@ handle_info(_Message, Tab) ->
 	{noreply, Tab}.
 
 terminate(_Reason, Tab) ->
-	do(ets:tab2list(Tab), fun(P) -> chat_group:stop(P) end),
 	ets:delete(Tab),
 	ok.
 
 code_change(_OldVersion, Tab, _Extra) -> 
 	{ok, Tab}.
+
+close_all_groups(Tab) ->
+	do(ets:tab2list(Tab), fun(P) -> chat_group:stop(P) end).
 
 do([], _Fun) ->
 	ok;
